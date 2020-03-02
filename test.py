@@ -2,7 +2,7 @@ import argparse
 import os
 import collections
 import time
-from subprocess import Popen
+from subprocess import Popen, check_output
 
 
 def disk_usage(path):
@@ -18,7 +18,8 @@ def disk_usage(path):
 
 
 def detect_mount(path_to_mount):
-    if not os.path.ismount(path_to_mount):
+    c = check_output("sudo fdisk -l | grep \"Disk /\" | awk '{print $2}'", shell=True)
+    if path_to_mount not in c:
         raise Exception("Provided path is not mount")
 
 
@@ -27,6 +28,7 @@ def check_params(path_to_mount, count_files, size_files, free_space):
     if count_files * size_files > free_space:
         raise Exception("count*size of files more then free_space")
     disk = disk_usage(path_to_mount)
+    print(f"Free Space on disk: {disk.free}")
 
     if disk.free <= free_space:
         raise Exception("Not enough free_space")
@@ -43,8 +45,12 @@ def write_files(mount_path, count_files, size_files):
 def dd_files(mount_path, count_files, size_files):
     for i in range(count_files):
         start = time.time()
-        cmd = ['dd', 'if=/dev/urandom', f"of={os.path.join(mount_path, str(i))}", f'bs={size_files}']
-        Popen(cmd)
+        cmd = ['dd', 'if=/dev/urandom', f"of={os.path.join(mount_path, str(i))}", f'bs={size_files}', 'count=1']
+        p = Popen(cmd)
+        output, err = p.communicate()
+        p_status = p.wait()
+        if p_status != 0:
+            print (f"dd Error: {err}")
         end = time.time()
         print(f"process {i} tool {end - start}")
 
@@ -67,7 +73,7 @@ if __name__ == "__main__":
     size_files = args.size_files
     mount_path = args.path
 
-    detect_mount(mount_path)
-    check_params(mount_path, count_files, size_files, free_space)
+    #detect_mount(mount_path)
+    #check_params(mount_path, count_files, size_files, free_space)
     write_files(mount_path, count_files, size_files)
     dd_files(mount_path, count_files, size_files)

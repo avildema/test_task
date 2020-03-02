@@ -21,4 +21,6 @@ if __name__ == "__main__":
 
     with Pool(processes=len(args.list)) as pool:
         pool.map(partial(run_process, command=args.command), args.list)
+        pool.close()
+        pool.join()
 
