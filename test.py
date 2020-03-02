@@ -17,7 +17,7 @@ def disk_usage(path):
         raise Exception("System is not POSIX")
 
 
-def detect_mount(path_to_mount, count_files, size_files, free_space):
+def detect_mount(path_to_mount):
     if not os.path.ismount(path_to_mount):
         raise Exception("Provided path is not mount")
 
@@ -67,7 +67,7 @@ if __name__ == "__main__":
     size_files = args.size_files
     mount_path = args.path
 
-    detect_mount(mount_path, count_files, size_files, free_space)
+    detect_mount(mount_path)
     check_params(mount_path, count_files, size_files, free_space)
     write_files(mount_path, count_files, size_files)
     dd_files(mount_path, count_files, size_files)
