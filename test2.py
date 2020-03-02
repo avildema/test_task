@@ -1,13 +1,17 @@
 import argparse
 import os
 from multiprocessing import Pool
-from subprocess import check_output, STDOUT
+from subprocess import Popen, PIPE
 from functools import partial
 
 
 def run_process(server, command):
-    out = check_output(f'ssh {server} "{command}"', stderr=STDOUT, shell=True)
-    print(out)
+    p = Popen(f'ssh {server} "{command}"', stdout=PIPE, stderr=PIPE, universal_newlines=True, shell=True)
+    output, err = p.communicate()
+    if p.returncode:
+        print (f"{command} on {server} finished incorrect: {err}")
+    else:
+        print(server, output)
 
 
 if __name__ == "__main__":
@@ -21,6 +25,5 @@ if __name__ == "__main__":
 
     with Pool(processes=len(args.list)) as pool:
         pool.map(partial(run_process, command=args.command), args.list)
-        pool.close()
-        pool.join()
+    pool.join()
 

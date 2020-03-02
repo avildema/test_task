@@ -48,8 +48,7 @@ def dd_files(mount_path, count_files, size_files):
         cmd = ['dd', 'if=/dev/urandom', f"of={os.path.join(mount_path, str(i))}", f'bs={size_files}', 'count=1']
         p = Popen(cmd)
         output, err = p.communicate()
-        p_status = p.wait()
-        if p_status != 0:
+        if  p.returncode:
             print (f"dd Error: {err}")
         end = time.time()
         print(f"process {i} tool {end - start}")
@@ -73,7 +72,7 @@ if __name__ == "__main__":
     size_files = args.size_files
     mount_path = args.path
 
-    #detect_mount(mount_path)
-    #check_params(mount_path, count_files, size_files, free_space)
+    detect_mount(mount_path)
+    check_params(mount_path, count_files, size_files, free_space)
     write_files(mount_path, count_files, size_files)
     dd_files(mount_path, count_files, size_files)
