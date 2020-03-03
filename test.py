@@ -2,7 +2,7 @@ import argparse
 import os
 import collections
 import time
-from subprocess import Popen, check_output
+from subprocess import Popen, PIPE
 
 
 def disk_usage(path):
@@ -18,9 +18,15 @@ def disk_usage(path):
 
 
 def detect_mount(path_to_mount):
-    c = check_output("sudo fdisk -l | grep \"Disk /\" | awk '{print $2}'", shell=True)
-    if path_to_mount not in c:
+    p = Popen("df -l | grep '^/dev' | awk '{print $1\":\"$6}'", stdout=PIPE, stderr=PIPE, universal_newlines=True, shell=True)
+    output, err = p.communicate()
+    if p.returncode:
+        raise Exception(f"Detected mount disk finished with error: {err}")
+    data = dict([tuple(i.split(':')) for i in output.strip().split('\n')])
+
+    if path_to_mount not in data.keys():
         raise Exception("Provided path is not mount")
+    return data.get(path_to_mount)
 
 
 def check_params(path_to_mount, count_files, size_files, free_space):
@@ -72,7 +78,7 @@ if __name__ == "__main__":
     size_files = args.size_files
     mount_path = args.path
 
-    detect_mount(mount_path)
-    check_params(mount_path, count_files, size_files, free_space)
-    write_files(mount_path, count_files, size_files)
-    dd_files(mount_path, count_files, size_files)
+    real_path = detect_mount(mount_path)
+    check_params(real_path, count_files, size_files, free_space)
+    write_files(real_path, count_files, size_files)
+    dd_files(real_path, count_files, size_files)
